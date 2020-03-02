@@ -144,9 +144,12 @@ public:
   }
 };
 #else
-class MagicGraphicsItem
+struct MagicGraphicsItem
 {
-  static constexpr double magic(const char*, double defval, double, double) noexcept { return defval; }
-  static constexpr QPointF magic(const char*, QPointF defval, QPointF, QPointF) noexcept { return defval; }
+  template<typename... F>
+  static constexpr double magic(const char*, double defval, double, double, F&&...) noexcept { return defval; }
+  
+  template<typename... F>
+  static constexpr QPointF magic(const char*, QPointF defval, QPointF, QPointF, F&&...) noexcept { return defval; }
 };
 #endif
