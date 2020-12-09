@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QFormLayout>
 #include <unordered_map>
+#include <QFrame>
 
 namespace std
 {
@@ -143,6 +144,97 @@ public:
     }
   }
 };
+
+static void magic_pos(QString name, QGraphicsItem* item, QObject* ctx)
+{
+  auto& m = MagicWidget::instance();
+
+  auto widg = new QWidget;
+  {
+    auto lay = new QHBoxLayout;
+    widg->setLayout(lay);
+    auto x = new QSpinBox;
+    auto y = new QSpinBox;
+
+    x->setRange(-30, 500);
+    x->setValue(item->pos().x());
+    QObject::connect(x, qOverload<int>(&QSpinBox::valueChanged), ctx,  [=] (int x) { item->setPos(x, y->value()); });
+    lay->addWidget(x);
+
+    y->setRange(-30, 500);
+    y->setValue(item->pos().y());
+    QObject::connect(y, qOverload<int>(&QSpinBox::valueChanged), ctx,  [=] (int y) { item->setPos(x->value(), y); });
+    lay->addWidget(y);
+  }
+  static_cast<QFormLayout*>(m.layout())->addRow(name, widg);
+
+  m.items[{name, item}] = MagicWidget::Connection{widg};
+/*
+  QObject::connect(ctx, &QObject::destroyed, widg, [=] {
+    auto& m = MagicWidget::instance();
+    auto widg = m.items[{name, item}].widget;
+    static_cast<QFormLayout*>(m.layout())->removeRow(widg);
+    widg->deleteLater();
+    m.items.erase({name, item});
+  });*/
+}
+
+template<typename T>
+static void magic_rect(QString name, T* item, QObject* ctx)
+{
+  auto& m = MagicWidget::instance();
+
+  auto widg = new QFrame;
+  widg->setFrameStyle(QFrame::Box);
+  {
+    auto lay = new QHBoxLayout;
+    widg->setLayout(lay);
+    auto x = new QSpinBox;
+    auto y = new QSpinBox;
+    auto w = new QSpinBox;
+    auto h = new QSpinBox;
+
+    x->setRange(-30, 500);
+    x->setValue(item->pos().x());
+    QObject::connect(x, qOverload<int>(&QSpinBox::valueChanged), ctx,  [=] (int x) { item->setPos(x, y->value()); });
+    lay->addWidget(x);
+
+    y->setRange(-30, 500);
+    y->setValue(item->pos().y());
+    QObject::connect(y, qOverload<int>(&QSpinBox::valueChanged), ctx,  [=] (int y) { item->setPos(x->value(), y); });
+    lay->addWidget(y);
+
+    w->setRange(10, 500);
+    w->setValue(item->boundingRect().width());
+    QObject::connect(w, qOverload<int>(&QSpinBox::valueChanged), ctx,  [=] (int w) {
+      auto rect = item->boundingRect();
+      rect.setWidth(w);
+      item->setRect(rect);
+    });
+    lay->addWidget(w);
+
+    h->setRange(10, 500);
+    h->setValue(item->boundingRect().height());
+    QObject::connect(h, qOverload<int>(&QSpinBox::valueChanged), ctx,  [=] (int h) {
+      auto rect = item->boundingRect();
+      rect.setHeight(h);
+      item->setRect(rect);
+    });
+    lay->addWidget(h);
+  }
+  static_cast<QFormLayout*>(m.layout())->addRow(name, widg);
+
+  m.items[{name, item}] = MagicWidget::Connection{widg};
+/*
+  QObject::connect(ctx, &QObject::destroyed, widg, [=] {
+    auto& m = MagicWidget::instance();
+    auto widg = m.items[{name, item}].widget;
+    static_cast<QFormLayout*>(m.layout())->removeRow(widg);
+    widg->deleteLater();
+    m.items.erase({name, item});
+  });
+  */
+}
 #else
 struct MagicGraphicsItem
 {
